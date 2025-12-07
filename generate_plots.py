@@ -95,7 +95,7 @@ def load_dataset(path, max_balls=3):
     return np.array(X, dtype=np.float32), np.array(y, dtype=np.float32)
     
 # Use perfect dataset if available, otherwise fallback (or fail)
-dataset_path = 'perfect_dataset.csv'
+dataset_path = 'dataset.csv'
 if not os.path.exists(dataset_path):
     print(f"Warning: {dataset_path} not found. Using dataset.csv")
     dataset_path = 'dataset.csv'
@@ -148,7 +148,7 @@ def train_model(X_train, y_train, X_test, y_test, mode='regression', epochs=100,
     # Create Model
     if use_mlp:
         # Architecture: Input -> 8 -> 1
-        layers = np.array([input_size, 8, 1], dtype=np.uint64) # usize is 64-bit on 64-bit systems
+        layers = np.array([input_size, 4, 1], dtype=np.uint64)
         c_layers = layers.ctypes.data_as(ctypes.POINTER(ctypes.c_size_t))
         model = lib.mlp_new(c_layers, len(layers))
     else:
@@ -182,7 +182,7 @@ def train_model(X_train, y_train, X_test, y_test, mode='regression', epochs=100,
         test_loss = evaluate(model, X_test, y_test, is_classification, is_mlp=use_mlp)
         test_errors.append(test_loss)
         
-        if epoch % 10 == 0:
+        if epoch % 100 == 0:
             print(f"Epoch {epoch}: Train={train_loss:.4f}, Test={test_loss:.4f}")
             
     # Free memory
@@ -232,7 +232,7 @@ y_test_class = np.where(y_test > 0, 1.0, -1.0).astype(np.float32)
 
 # 6. Experiment 3: Regression (MLP)
 # print("Starting Regression Experiment (MLP)...")
-# train_err_mlp, test_err_mlp = train_model(X_train, y_train, X_test, y_test, mode='regression', epochs=500, alpha=0.001, use_mlp=True)
+# train_err_mlp, test_err_mlp = train_model(X_train, y_train, X_test, y_test, mode='regression', epochs=1000, alpha=0.001, use_mlp=True)
 
 # plt.figure()
 # plt.plot(train_err_mlp, label='Train MSE')
@@ -248,7 +248,7 @@ y_test_class = np.where(y_test > 0, 1.0, -1.0).astype(np.float32)
 print("Starting Classification Experiment (MLP)...")
 # For expert bot, we might want to save to a different model file to avoid overwriting the human one immediately?
 # Or just overwrite it as "model.txt" is what the game loads.
-train_err_mlp_cls, test_err_mlp_cls = train_model(X_train, y_train_class, X_test, y_test_class, mode='classification', epochs=200, alpha=0.001, use_mlp=True, save_path="Assets/model.txt")
+train_err_mlp_cls, test_err_mlp_cls = train_model(X_train, y_train_class, X_test, y_test_class, mode='classification', epochs=1000, alpha=0.001, use_mlp=True, save_path="Assets/model.txt")
 
 plt.figure()
 plt.plot(train_err_mlp_cls, label='Train Error Rate')

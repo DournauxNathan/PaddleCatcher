@@ -77,7 +77,7 @@ public class DataRecorder : MonoBehaviour
 
     public void SaveData()
     {
-        string path = Path.Combine(Application.dataPath, "../perfect_dataset.csv");
+        string path = Path.Combine(Application.dataPath, "../dataset.csv");
         bool fileExists = File.Exists(path);
 
         StringBuilder sb = new StringBuilder();

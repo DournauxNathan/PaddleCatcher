@@ -11,63 +11,63 @@ Le problème est formulé comme une tâche d'apprentissage supervisé :
 
 L'objectif est de trouver une fonction $f$ telle que $f(\text{état}) \approx \text{action\_humaine}$.
 
-### 3. Méthodologie
+### 3. Expérimentations
 
-#### 3.1 Collecte de Données : Constitution du Dataset
+Nous avons adopté une démarche scientifique itérative. Chaque expérimentation suit le même cycle rigoureux en 3 étapes :
 
-La première étape cruciale est la constitution d'un dataset d'entraînement supervisé. Nous cherchons à capturer le comportement d'un expert (le joueur humain) sous la forme de couples **(État, Action)**.
+1.  **Collecte de Données** : Enregistrement de parties jouées (Humain ou Bot).
+2.  **Entraînement** : Apprentissage du réseau de neurones avec des hyperparamètres spécifiques.
+3.  **Analyse** : Visualisation des courbes d'erreur pour valider ou rejeter l'hypothèse.
 
-*   **Outil** : Un script `DataRecorder.cs` a été implémenté dans Unity pour observer la partie en temps réel.
-*   **Fréquence** : L'enregistrement s'effectue à chaque frame physique (`FixedUpdate`, 50Hz) pour garantir une cohérence avec la simulation physique du jeu.
+#### 3.1 Expérience 1 : La Régression (Échec)
 
-Chaque entrée du dataset représente un instant $t$ de la partie et est divisée en deux composantes distinctes :
+#### 3.1 Expérience 1 : La Régression (Échec)
 
-1.  **L'État du Jeu (Input du Modèle)** : Ce que l'agent "voit".
-    *   **Paddle X** : La position horizontale du joueur (réel).
-    *   **Balles** : La liste des positions $(x, y)$ de tous les objets tombants actifs à cet instant. Cela représente l'environnement dynamique auquel l'agent doit réagir.
+Cette expérience visait à prédire la valeur exacte du joystick (continue entre -1.0 et 1.0). Nous avons testé deux architectures pour tenter de résoudre le problème.
 
-2.  **L'Action (Target du Modèle)** : Ce que l'agent doit "faire".
-    *   **Action X** : La commande donnée par le joueur humain, normalisée entre -1.0 (gauche) et 1.0 (droite). C'est la valeur que le réseau de neurones devra apprendre à prédire.
+*   **Hypothèse** : L'IA peut apprendre une fonction continue $f(état) \rightarrow [-1, 1]$.
+*   **Hyperparamètres** :
+    *   **Modèle** : MLP (Perceptron Multicouche).
+    *   **Architecture Phase A** : `[Input, 8, 1]` (Simple).
+    *   **Architecture Phase B** : `[Input, 16, 16, 1]` (Complexe).
+    *   **Activation** : `Tanh`.
+    *   **Learning Rate** : `0.001`.
+    *   **Époques** : `500`.
+    *   **Fonction de Coût** : MSE (Mean Squared Error).
 
-*   **Stockage et Format** :
-    Les données sont persistées dans un fichier `dataset.csv` à la fin de chaque partie. Le format CSV a été choisi pour sa simplicité et sa lisibilité.
-    *   Structure : `PaddleX,ActionX,BallsData`
-    *   Gestion des entrées variables : La colonne `BallsData` encode la liste variable des balles sous forme de chaîne de caractères (ex: `x1:y1|x2:y2`), permettant de stocker un nombre arbitraire d'objets dans une structure tabulaire fixe.
+*   **Résultats (Phase A : Modèle Simple `[8 neurones]`)** :
+    *   *Observation* : L'erreur descend initialement puis **stagne** rapidement autour de 0.23 (plateau).
+    *   *Analyse* : Le modèle apprend seulement à prédire la moyenne (souvent 0) pour minimiser l'erreur globale, incapable de capturer la logique fine.
 
-#### 3.2 Modélisation (Moteur d'IA)
-Pour la modélisation, nous avons choisi d'implémenter un **Perceptron Multicouche (MLP)**, une classe de réseaux de neurones artificiels capable d'approximer des fonctions non-linéaires complexes.
+*   **Résultats (Phase B : Modèle Complexe `[16, 16 neurones]`)** :
+    *   *Observation* : Après 250 époques, la courbe de test (verte) remonte drastiquement alors que l'entraînement (bleu) continue de descendre.
+    *   *Analyse* : C'est un cas typique de **Sur-apprentissage (Overfitting)**. En complexifiant le modèle, il a commencé à "apprendre par cœur" le bruit des données d'entraînement mais a perdu toute capacité de généralisation.
 
-*   **Technologie** : Le cœur de l'IA est développé en **Rust** (`RustLib`) pour garantir performance et sécurité mémoire.
-*   **Architecture** :
-    *   **Perceptron Simple** : Implémenté pour des tests initiaux ou des tâches linéairement séparables.
-    *   **MLP** : Implémenté avec une architecture flexible (nombre de couches et de neurones configurables).
-    *   **Activation** : Utilisation de la tangente hyperbolique (`tanh`) pour les couches cachées.
-*   **Algorithme d'Apprentissage** : L'entraînement utilise l'algorithme de **rétropropagation du gradient** (Backpropagation) pour minimiser l'erreur entre la prédiction du réseau et l'action réelle du joueur.
+*   **Conclusion de l'expérience** :
+    L'échec est structurel. L'utilisation d'un **Clavier** génère des signaux "carrés" (tout ou rien) incompatibles avec une régression qui cherche une courbe lisse. Même un modèle plus puissant ne fait qu'apprendre le bruit. La classification est donc nécessaire.
 
-#### 3.4 Protocole d'Expérimentation
+#### 3.2 Expérience 2 : La Classification (Succès)
 
-Pour valider nos modèles et ajuster les hyperparamètres, nous avons mis en place un environnement d'expérimentation flexible utilisant **Jupyter Notebook** et **Python**.
+*   **Hypothèse** : Il est plus simple de prédire une intention (Gauche / Droite / Rien).
+*   **1. Collecte** :
+    *   Mêmes données, mais transformation de la sortie en 3 classes.
+*   **2. Entraînement** :
+    *   Modèle : MLP (8 neurones cachés).
+    *   Hyperparamètres : Taux d'apprentissage ajusté.
+*   **3. Résultats** :
+    *   Taux de réussite > 84%.
+    *   *Analyse* : La simplification du problème permet au réseau de converger rapidement.
 
-*   **Approche Hybride (Python + Rust)** :
-    *   Le notebook Jupyter (`experiment.ipynb`) sert d'interface de haut niveau pour charger les données, configurer les expériences et visualiser les résultats.
-    *   La librairie Rust est compilée en DLL (`.dll` ou `.so`) et chargée dynamiquement par Python via `ctypes`. Cela permet de bénéficier de la performance de Rust pour les calculs lourds (entraînement) tout en profitant de l'écosystème Python (Pandas, Matplotlib) pour l'analyse.
+#### 3.3 Expérience 3 : L'Agent "Invincible" (Expert Iteration)
 
-*   **Prétraitement des Données** :
-    *   Les données brutes du CSV sont transformées en vecteurs de taille fixe.
-    *   **Stratégie** : Nous conservons uniquement les **3 balles les plus proches** du bas de l'écran (les plus menaçantes).
-    *   **Vecteur d'Entrée** : `[PaddleX, Ball1_X, Ball1_Y, Ball2_X, Ball2_Y, Ball3_X, Ball3_Y]`. Si moins de 3 balles sont présentes, des valeurs de remplissage (padding) sont utilisées.
-    *   **Split Train/Test** : Le dataset est divisé en 80% pour l'entraînement et 20% pour le test afin d'évaluer la généralisation.
-
-*   **Types d'Expériences** :
-    1.  **Régression** : Le modèle tente de prédire la valeur exacte de l'input humain (continue entre -1.0 et 1.0). L'erreur est mesurée par la Moyenne des Carrés des Erreurs (MSE).
-    2.  **Classification** : Le modèle tente de prédire la décision discrète (Gauche / Droite). L'erreur est mesurée par le taux d'erreur de classification.
-
-#### 3.5 Extraction et Gestion des Hyperparamètres
-
-Une étape importante a été l'extraction des hyperparamètres critiques (Taux d'apprentissage, Nombre d'époques, Architecture du réseau) dans une section dédiée du notebook. Cette séparation entre la configuration et la logique d'entraînement permet :
-*   Une itération plus rapide lors de la recherche des meilleurs paramètres.
-*   Une meilleure lisibilité et reproductibilité des expériences.
-*   La prévention d'erreurs de manipulation dans le code cœur.
+*   **Hypothèse** : Apprendre d'un algorithme parfait donne de meilleurs résultats que d'apprendre d'un humain imparfait.
+*   **1. Collecte** :
+    *   Joueur : `AutoPilot.cs` (Algorithme mathématique parfait).
+    *   Dataset : 145 000 échantillons "propres".
+*   **2. Entraînement** :
+    *   Modèle : MLP Classification.
+*   **3. Résultats** :
+    *   Précision > 87%. L'agent ne perd jamais.
 
 ### 4. État d'Avancement et Analyse
 
