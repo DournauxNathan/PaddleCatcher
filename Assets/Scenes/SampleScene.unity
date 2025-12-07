@@ -149,7 +149,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c78e3849baabda478d2591061f8b067, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  maxLives: 3
+  maxLives: 9999
   scoreText: {fileID: 436157535}
   livesText: {fileID: 1390727730}
   gameOverPanel: {fileID: 399672831}
@@ -1273,8 +1273,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PaddleController
   speed: 15
   xLimit: 9
-  useAI: 0
-  modelPath: 
+  useAI: 1
+  modelPath: Assets/model.txt
 --- !u!61 &1635913266
 BoxCollider2D:
   m_ObjectHideFlags: 0
