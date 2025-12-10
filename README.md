@@ -35,7 +35,9 @@ Une première tentative a visé à prédire la valeur exacte du stick (continue 
 *   **Protocole** : Joueur au Clavier. Modèle MLP. Fonction de coût MSE.
 *   **Résultats** :
     *   *Phase A (Modèle Simple - 8 neurones)* : L'erreur stagne rapidement (Plateau à 0.23). Le modèle apprend la moyenne (0) et ne capture aucune stratégie.
+    ![Régression Simple](img/1_Reg_8-0.001-1000.png)
     *   *Phase B (Modèle Complexe - 16 neurones)* : L'erreur de test remonte brutalement après 400 époques. C'est du **Sur-apprentissage (Overfitting)**.
+    ![Régression Complexe](img/2_Reg-16_16-0.001-1000.png)
 *   **Conclusion** : L'échec est structurel. L'utilisation d'un **Clavier** (valeurs discrètes -1, 0, 1) est incompatible avec une régression qui cherche une fonction continue lisse. Le modèle ne peut qu'apprendre le bruit ou la moyenne.
 
 #### 3.2 Expérience 2 : La Classification (Succès)
@@ -43,12 +45,16 @@ Le problème a été reformulé en Classification : prédire une classe (Gauche 
 Une étude comparative de l'architecture (nombre de neurones dans la couche cachée) a été menée :
 
 *   **2 Neurones (Trop Petit)** : **Sous-apprentissage**. Erreur ~17%. Le modèle manque de capacité pour saisir les nuances du jeu.
+    ![Classification 2 Neurones](img/3_Cla-2-0.001-1000.png)
 *   **4 Neurones (Instable)** : Erreur ~19%. Le modèle oscille et n'arrive pas à converger proprement.
+    ![Classification 4 Neurones](img/4_Cla-4-0.001-1000.png)
 *   **16 Neurones (Trop Gros)** : **Sur-apprentissage**. Apparition de pics d'instabilité et écart grandissant entre l'entraînement et le test.
+    ![Classification 16 Neurones](img/5_Cla-16_16-0.001-1000.png)
 *   **8 Neurones (Optimal)** : **Convergence Parfaite**.
     *   L'erreur chute drastiquement vers l'époque 250 (le "déclic").
     *   Stabilisation à **9% d'erreur** (91% de précision).
     *   Robustesse validée par plusieurs entraînements indépendants.
+    ![Classification 8 Neurones](img/6_Cla-8-0.001-1000.png)
 
 C'est donc l'architecture à **8 neurones** qui a été retenue.
 
